@@ -1,0 +1,72 @@
+Imports System.Data.OleDb       ' menggunakan MS Access database
+ 
+Public Class Form1
+ 
+    Const CONN_STRING As String = "Provider=Microsoft.ACE.OLEDB.12.0;" &
+                            "Data Source=D:\Databases\AccessDatabases\Northwind.accdb;" &
+                            "Persist Security Info=False;"
+ 
+    Private bs As New BindingSource
+ 
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+ 
+        With DGV
+            '.Dock = DockStyle.Fill
+            .AllowUserToAddRows = False
+            .AllowUserToDeleteRows = False
+            .AllowUserToOrderColumns = True
+            .AlternatingRowsDefaultCellStyle.BackColor = Color.WhiteSmoke
+            .Anchor = (AnchorStyles.Left Or AnchorStyles.Top Or AnchorStyles.Right Or AnchorStyles.Bottom)
+            .AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells
+            .BorderStyle = BorderStyle.Fixed3D
+            .ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
+            .ReadOnly = True
+            .ColumnHeadersDefaultCellStyle.Font =
+                New Font(.ColumnHeadersDefaultCellStyle.Font, FontStyle.Bold)
+        End With
+ 
+    End Sub
+ 
+    Memasang filter dan mengurut database untuk ditampilkan di datagridview.
+    Private Sub SearchToolStripButton_Click(sender As Object, e As EventArgs) Handles SearchToolStripButton.Click
+        ' Dim query As String = "SELECT * " &
+        Dim query As String = "SELECT Company, [Last Name], [First Name], " &
+                                    "[Job Title], [Business Phone], [Fax Number] " &
+                                "FROM Customers " &
+                                "WHERE [Last Name] Like @p1 " &
+                                "ORDER BY [Last Name], [First Name];"
+ 
+        Try
+            Using con As New OleDbConnection(CONN_STRING)
+                Using cmd As New OleDbCommand(query, con)
+                    ' ANSI-89 wildcard character is the asterisk (*).
+                    ' ANSI-92 wildcard characters is the percent sign (%).
+                    cmd.Parameters.AddWithValue("@p1", LastNameToolStripTextBox.Text & "%")
+ 
+                    con.Open()
+                    Using rdr As OleDbDataReader = cmd.ExecuteReader
+                        If rdr.HasRows Then
+                            bs.DataSource = rdr
+                            InquiryDGV.DataSource = bs
+                        Else
+                            MessageBox.Show("Search criteria yielded no records.",
+                                            Me.Text,
+                                            MessageBoxButtons.OK,
+                                            MessageBoxIcon.Information)
+                        End If
+                    End Using
+                End Using
+            End Using
+        Catch ex As Exception
+            MessageBox.Show(ex.Message,
+                            Me.Text,
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error)
+        End Try
+ 
+        LastNameToolStripTextBox.SelectAll()
+        LastNameToolStripTextBox.Focus()
+ 
+    End Sub
+ 
+End Class
